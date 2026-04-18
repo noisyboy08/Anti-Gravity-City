@@ -9,16 +9,34 @@ export function BurndownVis({ active }) {
     const [payloads, setPayloads] = useState([]);
 
     useEffect(() => {
-        if (!active) return;
-        // Simulate a CI build pushing a payload every 15s
+        if (!active) {
+            // Clear out any leftover payloads when the feature gets disabled.
+            setPayloads([]);
+            return;
+        }
         const interval = setInterval(() => {
             setPayloads(prev => [...prev, { id: Date.now(), pos: [0, 80, 0], status: Math.random() > 0.3 ? 'pass' : 'fail' }]);
         }, 15000);
         return () => clearInterval(interval);
     }, [active]);
 
+    // Critical perf fix: previously this called setPayloads on EVERY frame
+    // unconditionally, which made React re-render this component 60 times
+    // per second even when the feature was disabled (because the early
+    // `if (!active) return null` is below this hook). We now bail out early
+    // and short-circuit when there is nothing to update.
     useFrame(() => {
-        setPayloads(prev => prev.map(p => ({ ...p, pos: [p.pos[0], p.pos[1] - 0.5, p.pos[2]] })).filter(p => p.pos[1] > 0));
+        if (!active) return;
+        setPayloads(prev => {
+            if (prev.length === 0) return prev; // bail to avoid useless re-render
+            const next = [];
+            for (let i = 0; i < prev.length; i++) {
+                const p = prev[i];
+                const ny = p.pos[1] - 0.5;
+                if (ny > 0) next.push({ ...p, pos: [p.pos[0], ny, p.pos[2]] });
+            }
+            return next.length === prev.length ? next : next;
+        });
     });
 
     if (!active) return null;

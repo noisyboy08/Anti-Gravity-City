@@ -3,19 +3,32 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { seededRandom } from '../utils/seededRandom';
 
+// Hard ceiling so we never freeze the main thread no matter what `count` the
+// caller asks for. 50k instances of a tessellated octahedron + a 50k Matrix4
+// allocation loop locks Chrome for several seconds on most machines.
+const MAX_SAFE_INSTANCES = 8000;
+
 // ── 1. Performance via InstancedMesh (Render the Linux Kernel) ──
-export function InstancedCity({ active, count = 50000 }) {
+export function InstancedCity({ active, count = 4000 }) {
     const meshRef = useRef();
 
-    // Create matrix and color data for files spreading to the horizon (pure, deterministic)
+    // Cap to a safe value before any heavy work.
+    const safeCount = Math.min(count, MAX_SAFE_INSTANCES);
+
+    // CRITICAL: do NOT pre-compute when the feature is off. Previously the
+    // useMemo always ran even when `active=false`, allocating 50k instances
+    // and serialising them to a Float32Array on every mount. That freeze is
+    // the single biggest reason the app got "stuck in the middle".
     const { matrices, baseColors } = useMemo(() => {
+        if (!active) return { matrices: null, baseColors: null };
+
         const obj = new THREE.Object3D();
-        const colors = new Float32Array(count * 3);
-        const matrices = new Float32Array(count * 16);
+        const colors = new Float32Array(safeCount * 3);
+        const matrices = new Float32Array(safeCount * 16);
         const colorObj = new THREE.Color();
         const baseColorList = ['#00f5ff', '#ff0055', '#bb00ff', '#00ff41'];
 
-        for (let i = 0; i < count; i++) {
+        for (let i = 0; i < safeCount; i++) {
             const r1 = seededRandom('inst-' + i, 1);
             const r2 = seededRandom('inst-' + i, 2);
             const r3 = seededRandom('inst-' + i, 3);
@@ -44,23 +57,27 @@ export function InstancedCity({ active, count = 50000 }) {
         }
 
         return { matrices, baseColors: colors };
-    }, [count]);
+    }, [active, safeCount]);
 
-    // Apply prepared matrices/colors to the instanced mesh once the ref is available
+    // Apply prepared matrices/colors to the instanced mesh once the ref is available.
+    // Re-uses a single Matrix4 instead of `new`-ing safeCount of them.
     useEffect(() => {
-        if (!meshRef.current) return;
-        for (let i = 0; i < count; i++) {
-            const m = new THREE.Matrix4();
-            m.fromArray(matrices, i * 16);
-            meshRef.current.setMatrixAt(i, m);
+        if (!active || !meshRef.current || !matrices) return;
+        const tmp = new THREE.Matrix4();
+        for (let i = 0; i < safeCount; i++) {
+            tmp.fromArray(matrices, i * 16);
+            meshRef.current.setMatrixAt(i, tmp);
         }
         meshRef.current.instanceMatrix.needsUpdate = true;
-        if (meshRef.current.geometry) {
-            meshRef.current.geometry.setAttribute('color', new THREE.InstancedBufferAttribute(baseColors, 3));
+        if (meshRef.current.geometry && baseColors) {
+            meshRef.current.geometry.setAttribute(
+                'color',
+                new THREE.InstancedBufferAttribute(baseColors, 3)
+            );
         }
-    }, [count, matrices, baseColors]);
+    }, [active, safeCount, matrices, baseColors]);
 
-    // Animate the rotation of the entire instanced mesh very slowly
+    // Animate slow rotation only while active (still cheap, but no work when off).
     useFrame((state) => {
         if (active && meshRef.current) {
             meshRef.current.rotation.y = state.clock.elapsedTime * 0.005;
@@ -70,7 +87,7 @@ export function InstancedCity({ active, count = 50000 }) {
     if (!active) return null;
 
     return (
-        <instancedMesh ref={meshRef} args={[null, null, count]}>
+        <instancedMesh ref={meshRef} args={[null, null, safeCount]}>
             <octahedronGeometry args={[1, 0]}>
                 <instancedBufferAttribute attach="attributes-color" args={[baseColors, 3]} />
             </octahedronGeometry>

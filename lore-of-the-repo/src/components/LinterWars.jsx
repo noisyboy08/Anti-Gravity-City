@@ -33,19 +33,27 @@ export function LinterWars({ islands, active }) {
         };
     }, [active, islands]);
 
+    // Critical perf fix: only update state when there are enemies to update,
+    // and bail out the moment the feature is disabled. Before this, even when
+    // `active` was false the early-return below this hook never triggered, so
+    // setEnemies(new array) ran on every frame and forced a re-render at 60fps.
     useFrame(() => {
         if (!active) return;
-        // Enemies fall down towards core at 0,0,0
-        setEnemies(prev => prev.map(e => ({
-            ...e,
-            position: [
-                e.position[0] * 0.99,
-                e.position[1] - 0.1,
-                e.position[2] * 0.99
-            ]
-        })).filter(e => e.position[1] > 0)); // Remove if they reach 0
-
-        // Towers shoot lasers (update refs for visual)
+        setEnemies(prev => {
+            if (prev.length === 0) return prev;
+            const next = [];
+            for (let i = 0; i < prev.length; i++) {
+                const e = prev[i];
+                const ny = e.position[1] - 0.1;
+                if (ny > 0) {
+                    next.push({
+                        ...e,
+                        position: [e.position[0] * 0.99, ny, e.position[2] * 0.99],
+                    });
+                }
+            }
+            return next;
+        });
     });
 
     if (!active) return null;

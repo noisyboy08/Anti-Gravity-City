@@ -24,16 +24,17 @@ import { seededRandom } from '../utils/seededRandom';
 
 // ── 1. The Glitch Hunt (Gamified Bug Tracker) ────────────────
 export function GlitchSpiders({ islands, active }) {
-    if (!active || !islands) return null;
-
-    // Attach to 3 random islands
+    // Hooks must run unconditionally; never put `if (...) return` above hooks.
     const infectedIslands = useMemo(() => {
+        if (!islands) return [];
         return islands.filter(i => !i.isCore).slice(0, 3).map((island, i) => ({
             island,
             id: `glitch-${i}`,
-            issueNum: 1042 + i * 17
+            issueNum: 1042 + i * 17,
         }));
     }, [islands]);
+
+    if (!active || !islands) return null;
 
     return (
         <group>

@@ -8,7 +8,7 @@
  * - Raycaster interaction
  */
 
-import { useRef, useState, useMemo, useEffect } from 'react';
+import { useRef, useState, useMemo, useEffect, memo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Html } from '@react-three/drei';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -222,7 +222,7 @@ function EconomyTicker({ island, show, color }) {
 }
 
 // ─── Main FloatingIsland Component ────────────────────────────
-export function FloatingIsland({ island, themeColors, onSelect, selected, timelineProgress = 100, features = {} }) {
+function FloatingIslandImpl({ island, themeColors, onSelect, selected, timelineProgress = 100, features = {} }) {
     const groupRef = useRef();
     const [hovered, setHovered] = useState(false);
 
@@ -392,3 +392,17 @@ export function FloatingIsland({ island, themeColors, onSelect, selected, timeli
         </group>
     );
 }
+
+// React.memo wrapper. Toggling a single feature flag in the parent used to
+// re-render every island (an O(N) waste). With this comparator we only
+// re-render the islands whose own props actually changed; in particular we
+// only care about the `economy` flag from the `features` bag here.
+export const FloatingIsland = memo(FloatingIslandImpl, (prev, next) => {
+    if (prev.island !== next.island) return false;
+    if (prev.themeColors !== next.themeColors) return false;
+    if (prev.onSelect !== next.onSelect) return false;
+    if (prev.selected !== next.selected) return false;
+    if (prev.timelineProgress !== next.timelineProgress) return false;
+    if ((prev.features?.economy || false) !== (next.features?.economy || false)) return false;
+    return true;
+});

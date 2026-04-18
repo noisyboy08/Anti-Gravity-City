@@ -2,7 +2,7 @@
  * Scene.jsx — v4 (All 14 systems)
  */
 
-import { Suspense, useMemo, useRef, useState, useEffect } from 'react';
+import { Suspense, useMemo, useRef, useState, useEffect, useCallback } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
@@ -147,14 +147,30 @@ function SceneContents({
 
     const [astBeams, setAstBeams] = useState([]);
     useEffect(() => {
-        const updateBeams = () => setAstBeams([...(window.AST_CONNECTIONS || [])]);
+        // Throttle AST updates to once per animation frame at most. Several
+        // file-opens dispatching back-to-back used to spam React with a fresh
+        // array each time, cascading into a re-render storm of every island.
+        let scheduled = false;
+        const updateBeams = () => {
+            if (scheduled) return;
+            scheduled = true;
+            requestAnimationFrame(() => {
+                scheduled = false;
+                setAstBeams((window.AST_CONNECTIONS || []).slice());
+            });
+        };
         window.addEventListener('AST_UPDATED', updateBeams);
         return () => window.removeEventListener('AST_UPDATED', updateBeams);
     }, []);
 
-    const conflicts = getMockConflicts(islands);
-    const conflictMap = Object.fromEntries(conflicts.map(c => [c.islandId, c]));
-    const coreIsland = islands.find(i => i.isCore);
+    // Only recompute conflicts when the island set or the battle feature flips.
+    const conflictMap = useMemo(() => {
+        if (!features.battle) return {};
+        const conflicts = getMockConflicts(islands);
+        return Object.fromEntries(conflicts.map(c => [c.islandId, c]));
+    }, [islands, features.battle]);
+
+    const coreIsland = useMemo(() => islands.find(i => i.isCore), [islands]);
 
     const sunColor = matrixMode ? '#003300' : (features.carbon ? (carbonVisuals?.sunColor || primary) : primary);
     const ambientClr = matrixMode ? '#000500' : (features.carbon ? (carbonVisuals?.ambientColor || '#050020') : '#050020');
@@ -261,7 +277,7 @@ function SceneContents({
             <FPSController active={features.fps} />
             <CrossRepoWormholes active={features.wormhole} />
             <BossFight active={features.boss} />
-            <InstancedCity active={features.instanced} count={isExtremeLoad ? 4000 : 50000} />
+            <InstancedCity active={features.instanced} count={isExtremeLoad ? 2000 : 6000} />
             <TelemetryHeatmap islands={islands} active={features.heatmap} />
 
             <SupplyChainNebula active={features.nebula} />

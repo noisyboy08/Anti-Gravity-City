@@ -6,6 +6,7 @@
 import { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
+import { getSoftCircleTexture } from '../utils/softCircleTexture';
 
 export function StarField({ count = 3000, theme = 'cyber-astral' }) {
     const pointsRef = useRef();
@@ -67,6 +68,8 @@ export function StarField({ count = 3000, theme = 'cyber-astral' }) {
         }
     });
 
+    const sprite = getSoftCircleTexture();
+
     return (
         <points ref={pointsRef} geometry={geometry}>
             <pointsMaterial
@@ -74,8 +77,10 @@ export function StarField({ count = 3000, theme = 'cyber-astral' }) {
                 sizeAttenuation
                 transparent
                 opacity={0.9}
-                size={0.25}
+                size={0.6}
                 depthWrite={false}
+                map={sprite}
+                alphaTest={0.01}
             />
         </points>
     );
@@ -127,15 +132,20 @@ export function NebulaClouds({ theme = 'cyber-astral' }) {
         }
     });
 
+    const sprite = getSoftCircleTexture();
+
     return (
         <points ref={pointsRef} geometry={geometry}>
             <pointsMaterial
                 vertexColors
                 size={4}
                 transparent
-                opacity={0.07}
+                opacity={0.18}
                 sizeAttenuation
                 depthWrite={false}
+                map={sprite}
+                alphaTest={0.01}
+                blending={THREE.AdditiveBlending}
             />
         </points>
     );

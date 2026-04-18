@@ -9,6 +9,7 @@ import { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Html } from '@react-three/drei';
 import * as THREE from 'three';
+import { getSoftCircleTexture } from '../utils/softCircleTexture';
 
 // ── Rain Particles ─────────────────────────────────────────────
 function RainSystem({ center, radius = 9, count = 250 }) {
@@ -56,7 +57,7 @@ function RainSystem({ center, radius = 9, count = 250 }) {
 
     return (
         <points ref={pointsRef} geometry={geo}>
-            <pointsMaterial color="#88aacc" size={0.07} transparent opacity={0.65} sizeAttenuation depthWrite={false} blending={THREE.AdditiveBlending} />
+            <pointsMaterial color="#88aacc" size={0.10} transparent opacity={0.75} sizeAttenuation depthWrite={false} blending={THREE.AdditiveBlending} map={getSoftCircleTexture()} alphaTest={0.01} />
         </points>
     );
 }

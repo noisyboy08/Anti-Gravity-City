@@ -21,6 +21,7 @@ import { STLExporter } from 'three/examples/jsm/exporters/STLExporter.js';
 import { motion, AnimatePresence } from 'framer-motion';
 import gsap from 'gsap';
 import { seededRandom } from '../utils/seededRandom';
+import { getSoftCircleTexture } from '../utils/softCircleTexture';
 
 // ── 1. The Glitch Hunt (Gamified Bug Tracker) ────────────────
 export function GlitchSpiders({ islands, active }) {
@@ -126,7 +127,7 @@ function Explosion({ position, color }) {
 
     return (
         <points ref={pointsRef} geometry={geo}>
-            <pointsMaterial color={color} size={0.15} transparent opacity={1} blending={THREE.AdditiveBlending} depthWrite={false} />
+            <pointsMaterial color={color} size={0.18} transparent opacity={1} blending={THREE.AdditiveBlending} depthWrite={false} map={getSoftCircleTexture()} alphaTest={0.01} />
         </points>
     );
 }
@@ -170,7 +171,7 @@ export function SupplyChainNebula({ active }) {
 
     return (
         <points ref={pointsRef} geometry={geo}>
-            <pointsMaterial size={1.2} vertexColors transparent opacity={0.3} blending={THREE.AdditiveBlending} depthWrite={false} />
+            <pointsMaterial size={1.6} vertexColors transparent opacity={0.45} blending={THREE.AdditiveBlending} depthWrite={false} map={getSoftCircleTexture()} alphaTest={0.01} />
         </points>
     );
 }

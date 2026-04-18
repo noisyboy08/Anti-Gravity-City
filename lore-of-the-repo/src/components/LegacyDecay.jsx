@@ -7,6 +7,7 @@
 import { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
+import { getSoftCircleTexture } from '../utils/softCircleTexture';
 
 // ── Decay Calculator ──────────────────────────────────────────
 export function getDecayLevel(island, repoCreatedAt) {
@@ -83,11 +84,13 @@ export function DecayParticles({ position, decay, color }) {
             <points ref={pointsRef} geometry={geo}>
                 <pointsMaterial
                     color={rustColor}
-                    size={0.04 + decay * 0.06}
+                    size={0.08 + decay * 0.08}
                     transparent
-                    opacity={0.45 * decay}
+                    opacity={0.55 * decay}
                     sizeAttenuation
                     depthWrite={false}
+                    map={getSoftCircleTexture()}
+                    alphaTest={0.01}
                 />
             </points>
         </group>

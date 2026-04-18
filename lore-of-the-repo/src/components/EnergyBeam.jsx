@@ -7,6 +7,7 @@
 import { useRef, useMemo, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
+import { getSoftCircleTexture } from '../utils/softCircleTexture';
 
 const BEAM_VERT = `
   varying vec2 vUv;
@@ -127,12 +128,14 @@ export function BeamParticles({ from, to, color }) {
         <points ref={pointsRef} geometry={geometry}>
             <pointsMaterial
                 color={color}
-                size={0.08}
+                size={0.12}
                 transparent
-                opacity={0.6}
+                opacity={0.7}
                 sizeAttenuation
                 depthWrite={false}
                 blending={THREE.AdditiveBlending}
+                map={getSoftCircleTexture()}
+                alphaTest={0.01}
             />
         </points>
     );

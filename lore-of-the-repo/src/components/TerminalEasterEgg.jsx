@@ -8,6 +8,7 @@ import { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { motion, AnimatePresence } from 'framer-motion';
 import * as THREE from 'three';
+import { getSoftCircleTexture } from '../utils/softCircleTexture';
 
 // ── Matrix Digital Rain (inside Canvas) ──────────────────────
 export function MatrixRain({ active }) {
@@ -52,11 +53,13 @@ export function MatrixRain({ active }) {
         <points ref={pointsRef} geometry={geo}>
             <pointsMaterial
                 color="#00ff41"
-                size={0.22}
+                size={0.28}
                 transparent
-                opacity={0.85}
+                opacity={0.95}
                 sizeAttenuation
                 depthWrite={false}
+                map={getSoftCircleTexture()}
+                alphaTest={0.01}
             />
         </points>
     );

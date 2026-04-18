@@ -10,6 +10,7 @@ import * as THREE from 'three';
 import { FloatingIsland } from './FloatingIsland';
 import { EnergyBeam, BeamParticles } from './EnergyBeam';
 import { StarField, NebulaClouds, VerticalSpire } from './StarField';
+import { getSoftCircleTexture } from '../utils/softCircleTexture';
 import { PostProcessingEffects } from './PostProcessing';
 import { DroneCamera } from './DroneCamera';
 import { LiveTraffic } from './LiveTraffic';
@@ -104,7 +105,16 @@ function VoidDust({ color }) {
 
     return (
         <points ref={pointsRef} geometry={geo}>
-            <pointsMaterial color={color} size={0.055} transparent opacity={0.35} sizeAttenuation depthWrite={false} />
+            <pointsMaterial
+                color={color}
+                size={0.18}
+                transparent
+                opacity={0.45}
+                sizeAttenuation
+                depthWrite={false}
+                map={getSoftCircleTexture()}
+                alphaTest={0.01}
+            />
         </points>
     );
 }

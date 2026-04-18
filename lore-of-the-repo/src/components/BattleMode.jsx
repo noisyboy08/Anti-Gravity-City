@@ -8,6 +8,7 @@ import { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Html } from '@react-three/drei';
 import * as THREE from 'three';
+import { getSoftCircleTexture } from '../utils/softCircleTexture';
 
 // ── Mock conflicts ─────────────────────────────────────────────
 export function getMockConflicts(islands) {
@@ -135,9 +136,11 @@ function CollisionBurst({ position, colorA, colorB }) {
         <group position={position}>
             <points ref={pointsRef} geometry={geo}>
                 <pointsMaterial
-                    size={0.11} vertexColors transparent opacity={0.82}
+                    size={0.16} vertexColors transparent opacity={0.92}
                     sizeAttenuation depthWrite={false}
                     blending={THREE.AdditiveBlending}
+                    map={getSoftCircleTexture()}
+                    alphaTest={0.01}
                 />
             </points>
             <pointLight color={colorA} intensity={2} distance={8} decay={2} />
